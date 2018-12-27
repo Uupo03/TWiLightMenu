@@ -30,6 +30,7 @@
 #include "graphics/fontHandler.h"
 #include "ndsheaderbanner.h"
 #include "language.h"
+#include "inifile.h"
 
 #define ICON_POS_X	112
 #define ICON_POS_Y	96
@@ -70,36 +71,62 @@ static glImage gbaIcon[1];
 static glImage gbIcon[(32 / 32) * (64 / 32)];
 static glImage nesIcon[1];
 
+int darkTheme = 0
+
 u8 *clearTiles;
 u16 *blackPalette;
 u8 *tilesModified;
 
+
+void LoadSettings(void) {
+	CIniFile settingsini( settingsinipath );
+	darkTheme = settingsini.GetInt("SRLOADER", "MAINMENU_DARK_THEME", 0);
+}
 void iconTitleInit()
 {
 	clearTiles = new u8[(32 * 256) / 2]();
 	blackPalette = new u16[16*8]();
 	tilesModified = new u8[(32 * 256) / 2];
 }
-
-static inline void writeBannerText(int textlines, const char* text1, const char* text2, const char* text3)
-{
-	switch(textlines) {
-		case 0:
-		default:
-			printSmall(false, BOX_PX, iconYpos[0]+BOX_PY+BOX_PY_spacing1, text1);
-			break;
-		case 1:
-			printSmall(false, BOX_PX, iconYpos[0]+BOX_PY+BOX_PY_spacing2, text1);
-			printSmall(false, BOX_PX, iconYpos[0]+BOX_PY+BOX_PY_spacing3, text2);
-			break;
-		case 2:
-			printSmall(false, BOX_PX, iconYpos[0]+BOX_PY, text1);
-			printSmall(false, BOX_PX, iconYpos[0]+BOX_PY+BOX_PY_spacing1, text2);
-			printSmall(false, BOX_PX, iconYpos[0]+BOX_PY+BOX_PY_spacing1*2, text3);
-			break;
+if (darkTheme == 0) {
+	static inline void writeBannerText(int textlines, const char* text1, const char* text2, const char* text3)
+	{
+		switch(textlines) {
+			case 0:
+			default:
+				printSmall(false, BOX_PX, iconYpos[0]+BOX_PY+BOX_PY_spacing1, text1);
+				break;
+			case 1:
+				printSmall(false, BOX_PX, iconYpos[0]+BOX_PY+BOX_PY_spacing2, text1);
+				printSmall(false, BOX_PX, iconYpos[0]+BOX_PY+BOX_PY_spacing3, text2);
+				break;
+			case 2:
+				printSmall(false, BOX_PX, iconYpos[0]+BOX_PY, text1);
+				printSmall(false, BOX_PX, iconYpos[0]+BOX_PY+BOX_PY_spacing1, text2);
+				printSmall(false, BOX_PX, iconYpos[0]+BOX_PY+BOX_PY_spacing1*2, text3);
+				break;
+		}
+	}
+} else {
+	static inline void writeBannerText(int textlines, const char* text1, const char* text2, const char* text3)
+	{
+		switch(textlines) {
+			case 0:
+			default:
+				printLarge(false, BOX_PX, iconYpos[0]+BOX_PY+BOX_PY_spacing1, text1);
+				break;
+			case 1:
+				printLarge(false, BOX_PX, iconYpos[0]+BOX_PY+BOX_PY_spacing2, text1);
+				printLarge(false, BOX_PX, iconYpos[0]+BOX_PY+BOX_PY_spacing3, text2);
+				break;
+			case 2:
+				printLarge(false, BOX_PX, iconYpos[0]+BOX_PY, text1);
+				printLarge(false, BOX_PX, iconYpos[0]+BOX_PY+BOX_PY_spacing1, text2);
+				printLarge(false, BOX_PX, iconYpos[0]+BOX_PY+BOX_PY_spacing1*2, text3);
+				break;
+		}
 	}
 }
-
 static void convertIconTilesToRaw(u8 *tilesSrc, u8 *tilesNew, bool twl)
 {
 	int PY = 32;
@@ -884,12 +911,19 @@ void titleUpdate(bool isDir, const char* name)
 		}
 
 		// text
-		if (infoFound) {
-			writeBannerText(bannerlines, titleToDisplay[0], titleToDisplay[1], titleToDisplay[2]);
+		if (darkTheme == 0) {
+			if (infoFound) {
+				writeBannerText(bannerlines, titleToDisplay[0], titleToDisplay[1], titleToDisplay[2]);
+			} else {
+				printSmallCentered(false, iconYpos[0]+BOX_PY+BOX_PY_spacing2, name);
+				printSmallCentered(false, iconYpos[0]+BOX_PY+BOX_PY_spacing3, titleToDisplay[0]);
+			}
 		} else {
-			printSmallCentered(false, iconYpos[0]+BOX_PY+BOX_PY_spacing2, name);
-			printSmallCentered(false, iconYpos[0]+BOX_PY+BOX_PY_spacing3, titleToDisplay[0]);
+				writeBannerText(bannerlines, titleToDisplay[0], titleToDisplay[1], titleToDisplay[2]);
+			} else {
+				printLargeCentered(false, iconYpos[0]+BOX_PY+BOX_PY_spacing2, name);
+				printLargeCentered(false, iconYpos[0]+BOX_PY+BOX_PY_spacing3, titleToDisplay[0]);
+			}			
 		}
-		
 	}
 }

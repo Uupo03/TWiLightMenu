@@ -168,6 +168,8 @@ bool boostCpu = false;	// false == NTR, true == TWL
 bool boostVram = false;
 bool bstrap_dsiMode = false;
 
+int darkTheme == 0
+
 void LoadSettings(void) {
 	// GUI
 	CIniFile settingsini( settingsinipath );
@@ -176,12 +178,14 @@ void LoadSettings(void) {
 	consoleModel = settingsini.GetInt("SRLOADER", "CONSOLE_MODEL", 0);
     appName = settingsini.GetInt("SRLOADER", "APP_NAME", appName);
 
+
 	// Customizable UI settings.
 	guiLanguage = settingsini.GetInt("SRLOADER", "LANGUAGE", -1);
 	useGbarunner = settingsini.GetInt("SRLOADER", "USE_GBARUNNER2", 0);
 	if (!isRegularDS) useGbarunner = true;
 	theme = settingsini.GetInt("SRLOADER", "THEME", 0);
 	subtheme = settingsini.GetInt("SRLOADER", "SUB_THEME", 0);
+	darkTheme = settingsini.GetInt("SRLOADER", "MAINMENU_DARK_THEME", 0);
 	showDirectories = settingsini.GetInt("SRLOADER", "SHOW_DIRECTORIES", 1);
 	showBoxArt = settingsini.GetInt("SRLOADER", "SHOW_BOX_ART", 1);
 	animateDsiIcons = settingsini.GetInt("SRLOADER", "ANIMATE_DSI_ICONS", 0);
@@ -765,12 +769,24 @@ void loadGameOnFlashcard (const char* ndsPath, std::string filename, bool usePer
 			break;
 		}
 	}*/
-	char text[32];
-	snprintf (text, sizeof(text), "Start failed. Error %i", err);
-	ClearBrightness();
-	printSmall(false, 4, 80, text);
-	if (err == 0) {
-		printSmall(false, 4, 88, "Flashcard may be unsupported.");
+	if (darkTheme == 0)
+	{
+		char text[32];
+		snprintf (text, sizeof(text), "Start failed. Error %i", err);
+		ClearBrightness();
+		printSmall(false, 4, 80, text);
+		if (err == 0) {
+			printSmall(false, 4, 88, "Flashcard may be unsupported.");
+		}
+	}
+	else
+	{
+		char text[32];
+		snprintf (text, sizeof(text), "Start failed. Error %i", err);
+		ClearBrightness();
+		printLarge(false, 4, 80, text);
+		if (err == 0) {
+			printLarge(false, 4, 88, "Flashcard may be unsupported.");
 	}
 	stop();
 }
@@ -862,25 +878,51 @@ void dsCardLaunch() {
 	for (int i = 0; i < 15; i++) swiWaitForVBlank();
 }
 
-void printNdsCartBannerText() {
-	if (REG_SCFG_MC == 0x11) {
-		printSmall(false, 80, iconYpos[0]+8, "There is no Game Card");
-		printSmall(false, 124, iconYpos[0]+20, "inserted.");
-	} else {
-		printSmall(false, 100, iconYpos[0]+14, "Start Game Card");
+if (darkTheme == 0)
+{
+	void printNdsCartBannerText() {
+		if (REG_SCFG_MC == 0x11) {
+			printSmall(false, 80, iconYpos[0]+8, "There is no Game Card");
+			printSmall(false, 124, iconYpos[0]+20, "inserted.");
+		} else {
+			printSmall(false, 100, iconYpos[0]+14, "Start Game Card");
+		}
+	}
+
+	void printGbaBannerText() {
+		if (useGbarunner && !gbaBiosFound) {
+			printSmall(false, 96, iconYpos[3]+2, "BINF: bios.bin not");
+			printSmall(false, 84, iconYpos[3]+14, "found. Add GBA BIOS");
+			printSmall(false, 80, iconYpos[3]+26, "to enable GBARunner2.");
+		} else {
+			printSmall(false, useGbarunner ? 94 : 96, iconYpos[3]+14,
+								useGbarunner ? gbarunnerText : gbamodeText);
+		}
+	}
+}
+else
+{
+	void printNdsCartBannerText() {
+		if (REG_SCFG_MC == 0x11) {
+			printLarge(false, 80, iconYpos[0]+8, "There is no Game Card");
+			printLarge(false, 124, iconYpos[0]+20, "inserted.");
+		} else {
+			printLarge(false, 100, iconYpos[0]+14, "Start Game Card");
+		}
+	}
+
+	void printGbaBannerText() {
+		if (useGbarunner && !gbaBiosFound) {
+			printLarge(false, 96, iconYpos[3]+2, "BINF: bios.bin not");
+			printLarge(false, 84, iconYpos[3]+14, "found. Add GBA BIOS");
+			printLarge(false, 80, iconYpos[3]+26, "to enable GBARunner2.");
+		} else {
+			printLarge(false, useGbarunner ? 94 : 96, iconYpos[3]+14,
+								useGbarunner ? gbarunnerText : gbamodeText);
+		}
 	}
 }
 
-void printGbaBannerText() {
-	if (useGbarunner && !gbaBiosFound) {
-		printSmall(false, 96, iconYpos[3]+2, "BINF: bios.bin not");
-		printSmall(false, 84, iconYpos[3]+14, "found. Add GBA BIOS");
-		printSmall(false, 80, iconYpos[3]+26, "to enable GBARunner2.");
-	} else {
-		printSmall(false, useGbarunner ? 94 : 96, iconYpos[3]+14,
-							useGbarunner ? gbarunnerText : gbamodeText);
-	}
-}
 
 //---------------------------------------------------------------------------------
 int main(int argc, char **argv) {
@@ -911,7 +953,15 @@ int main(int argc, char **argv) {
 		graphicsInit();
 		fontInit();
 		whiteScreen = false;
-		printSmall(false, 64, 32, "fatinitDefault failed!");
+		if (darkTheme == 0)
+		{
+			printSmall(false, 64, 32, "fatinitDefault failed!");
+		}
+		else
+		{
+			printLarge(false, 64, 32, "fatinitDefault failed!");
+		}
+	
 		fadeType = true;
 		for (int i = 0; i < 30; i++) swiWaitForVBlank();
 		stop();
@@ -997,8 +1047,16 @@ int main(int argc, char **argv) {
 		controlTopBright = false;
 		whiteScreen = true;
 		fadeType = true;	// Fade in from white
-		printSmallCentered(false, 86, "Now copying data...");
-		printSmallCentered(false, 98, "Do not turn off the power.");
+		if (darkTheme == 0)
+		{
+			printSmallCentered(false, 86, "Now copying data...");
+			printSmallCentered(false, 98, "Do not turn off the power.");
+		}
+		else
+		{
+			printLargeCentered(false, 86, "Now copying data...");
+			printLargeCentered(false, 98, "Do not turn off the power.");
+		}
 		for (int i = 0; i < 30; i++) swiWaitForVBlank();
 		if (access(dsiWarePubPath.c_str(), F_OK) == 0) {
 			fcopy("sd:/_nds/TWiLightMenu/tempDSiWare.pub", dsiWarePubPath.c_str());
@@ -1159,7 +1217,14 @@ int main(int argc, char **argv) {
 
 			do {
 				clearText();
-				printSmall(false, 180, 2, RetTime().c_str());
+				if (darkTheme == 0)
+				{
+					printSmall(false, 180, 2, RetTime().c_str());
+				}
+				else
+				{
+					printLarge(false, 180, 2, RetTime().c_str());
+				}
 				if (isDSiMode() && launchType == 0 && !isLauncharg && !flashcardFound()) {
 					printNdsCartBannerText();
 				} else if (romFound) {
@@ -1316,7 +1381,11 @@ int main(int argc, char **argv) {
 							for (int i = 0; i < 60; i++) {
 								clearText();
 								iconYpos[1] -= 6;
-								printSmall(false, 180, 2, RetTime().c_str());
+								if (darkTheme == 0) {
+									printSmall(false, 180, 2, RetTime().c_str());
+								} else {
+									printLarge(false, 180, 2, RetTime().c_str());''
+								}
 								printGbaBannerText();
 								swiWaitForVBlank();
 							}
@@ -1698,8 +1767,11 @@ int main(int argc, char **argv) {
 					ClearBrightness();
 					const char* savecreate = "Creating public save file...";
 					const char* savecreated = "Public save file created!";
-					printSmall(false, 2, 80, savecreate);
-
+					if (darkTheme == 0) {
+						printSmall(false, 2, 80, savecreate);
+					} else {
+						printLarge(false, 2, 80, savecreate);
+					}
 					static const int BUFFER_SIZE = 4096;
 					char buffer[BUFFER_SIZE];
 					memset(buffer, 0, sizeof(buffer));
@@ -1711,7 +1783,11 @@ int main(int argc, char **argv) {
 						}
 						fclose(pFile);
 					}
-					printSmall(false, 2, 88, savecreated);
+					if (darkTheme == 0) {
+						printSmall(false, 2, 88, savecreated);	
+					} else {
+						printLarge(false, 2, 88, savecreated);
+					}
 					for (int i = 0; i < 60; i++) swiWaitForVBlank();
 				}
 
@@ -1721,8 +1797,11 @@ int main(int argc, char **argv) {
 					ClearBrightness();
 					const char* savecreate = "Creating private save file...";
 					const char* savecreated = "Private save file created!";
-					printSmall(false, 2, 80, savecreate);
-
+					if (darkTheme == 0) {
+						printSmall(false, 2, 80, savecreate);
+					} else {
+						printLarge(false, 2, 80, savecreate);
+					}
 					static const int BUFFER_SIZE = 4096;
 					char buffer[BUFFER_SIZE];
 					memset(buffer, 0, sizeof(buffer));
@@ -1734,39 +1813,72 @@ int main(int argc, char **argv) {
 						}
 						fclose(pFile);
 					}
-					printSmall(false, 2, 88, savecreated);
+					if (darkTheme == 0) {
+						printSmall(false, 2, 88, savecreated);
+					} else {
+						printLarge(false, 2, 88, savecreated);
+					}
 					for (int i = 0; i < 60; i++) swiWaitForVBlank();
 				}
-
-				if (secondaryDevice) {
-					whiteScreen = true;
-					clearText();
-					ClearBrightness();
-					printSmallCentered(false, 86, "Now copying data...");
-					printSmallCentered(false, 98, "Do not turn off the power.");
-					fcopy(dsiWareSrlPath.c_str(), "sd:/_nds/TWiLightMenu/tempDSiWare.dsi");
-					if (access(dsiWarePubPath.c_str(), F_OK) == 0) {
-						fcopy(dsiWarePubPath.c_str(), "sd:/_nds/TWiLightMenu/tempDSiWare.pub");
-					}
-					if (access(dsiWarePrvPath.c_str(), F_OK) == 0) {
-						fcopy(dsiWarePrvPath.c_str(), "sd:/_nds/TWiLightMenu/tempDSiWare.prv");
-					}
-
-					clearText();
-					if (access(dsiWarePubPath.c_str(), F_OK) == 0 || access(dsiWarePrvPath.c_str(), F_OK) == 0) {
-						printSmall(false, 2, 8, "After saving, please re-start");
-						if (appName == 0) {
-							printSmall(false, 2, 20, "TWiLight Menu++ to transfer your");
-						} else if (appName == 1) {
-							printSmall(false, 2, 20, "SRLoader to transfer your");
-						} else if (appName == 2) {
-							printSmall(false, 2, 20, "DSiMenu++ to transfer your");
+				if (darkTheme == 0) {
+					if (secondaryDevice) {
+						whiteScreen = true;
+						clearText();
+						ClearBrightness();
+						printSmallCentered(false, 86, "Now copying data...");
+						printSmallCentered(false, 98, "Do not turn off the power.");
+						fcopy(dsiWareSrlPath.c_str(), "sd:/_nds/TWiLightMenu/tempDSiWare.dsi");
+						if (access(dsiWarePubPath.c_str(), F_OK) == 0) {
+							fcopy(dsiWarePubPath.c_str(), "sd:/_nds/TWiLightMenu/tempDSiWare.pub");
 						}
-						printSmall(false, 2, 32, "save data back.");
-						for (int i = 0; i < 60*3; i++) swiWaitForVBlank();		// Wait 3 seconds
+						if (access(dsiWarePrvPath.c_str(), F_OK) == 0) {
+							fcopy(dsiWarePrvPath.c_str(), "sd:/_nds/TWiLightMenu/tempDSiWare.prv");
+						}
+
+						clearText();
+						if (access(dsiWarePubPath.c_str(), F_OK) == 0 || access(dsiWarePrvPath.c_str(), F_OK) == 0) {
+							printSmall(false, 2, 8, "After saving, please re-start");
+							if (appName == 0) {
+								printSmall(false, 2, 20, "TWiLight Menu++ to transfer your");
+							} else if (appName == 1) {
+								printSmall(false, 2, 20, "SRLoader to transfer your");
+							} else if (appName == 2) {
+								printSmall(false, 2, 20, "DSiMenu++ to transfer your");
+							}
+							printSmall(false, 2, 32, "save data back.");
+							for (int i = 0; i < 60*3; i++) swiWaitForVBlank();		// Wait 3 seconds
+						}
+					}
+				} else {
+					if (secondaryDevice) {
+						whiteScreen = true;
+						clearText();
+						ClearBrightness();
+						printLargeCentered(false, 86, "Now copying data...");
+						printLargeCentered(false, 98, "Do not turn off the power.");
+						fcopy(dsiWareSrlPath.c_str(), "sd:/_nds/TWiLightMenu/tempDSiWare.dsi");
+						if (access(dsiWarePubPath.c_str(), F_OK) == 0) {
+							fcopy(dsiWarePubPath.c_str(), "sd:/_nds/TWiLightMenu/tempDSiWare.pub");
+						}
+						if (access(dsiWarePrvPath.c_str(), F_OK) == 0) {
+							fcopy(dsiWarePrvPath.c_str(), "sd:/_nds/TWiLightMenu/tempDSiWare.prv");
+						}
+
+						clearText();
+						if (access(dsiWarePubPath.c_str(), F_OK) == 0 || access(dsiWarePrvPath.c_str(), F_OK) == 0) {
+							printLarge(false, 2, 8, "After saving, please re-start");
+							if (appName == 0) {
+								printLarge(false, 2, 20, "TWiLight Menu++ to transfer your");
+							} else if (appName == 1) {
+								printLarge(false, 2, 20, "SRLoader to transfer your");
+							} else if (appName == 2) {
+								printLarge(false, 2, 20, "DSiMenu++ to transfer your");
+							}
+							printLarge(false, 2, 32, "save data back.");
+							for (int i = 0; i < 60*3; i++) swiWaitForVBlank();		// Wait 3 seconds
+						}
 					}
 				}
-
 				char unlaunchDevicePath[256];
 				if (secondaryDevice) {
 					snprintf(unlaunchDevicePath, sizeof(unlaunchDevicePath), "sdmc:/_nds/TWiLightMenu/tempDSiWare.dsi");
@@ -1837,8 +1949,11 @@ int main(int argc, char **argv) {
 							// Create temporary file for nds-bootstrap
 							clearText();
 							ClearBrightness();
-							printSmall(false, 4, 4, "Creating \"BTSTRP.TMP\"...");
-
+							if (darkTheme == 0) {
+								printSmall(false, 4, 4, "Creating \"BTSTRP.TMP\"...");
+							} else {
+								printLarge(false, 4, 4, "Creating \"BTSTRP.TMP\"...");
+							}
 							static const int BUFFER_SIZE = 4096;
 							char buffer[BUFFER_SIZE];
 							memset(buffer, 0, sizeof(buffer));
@@ -1851,7 +1966,11 @@ int main(int argc, char **argv) {
 								}
 								fclose(pFile);
 							}
-							printSmall(false, 4, 18, "Done!");
+							if (darkTheme == 0) {
+								printSmall(false, 4, 18, "Done!");
+							} else {
+								printLarge(false, 4, 18, "Done!");
+							}
 							for (int i = 0; i < 30; i++) swiWaitForVBlank();
 						}
 
@@ -1911,8 +2030,11 @@ int main(int argc, char **argv) {
 							ClearBrightness();
 							const char* savecreate = "Creating save file...";
 							const char* savecreated = "Save file created!";
-							printSmall(false, 2, 80, savecreate);
-
+							if (darkTheme == 0) {
+								printSmall(false, 2, 80, savecreate);
+							} else {
+								printLarge(false, 2, 80, savecreate);
+							}
 							static const int BUFFER_SIZE = 4096;
 							char buffer[BUFFER_SIZE];
 							memset(buffer, 0, sizeof(buffer));
@@ -1951,7 +2073,11 @@ int main(int argc, char **argv) {
 								}
 								fclose(pFile);
 							}
-							printSmall(false, 2, 88, savecreated);
+							if (darkTheme == 0) {
+								printSmall(false, 2, 88, savecreated);
+							} else {
+								printLarge(false, 2, 88, savecreated);
+							}
 							for (int i = 0; i < 30; i++) swiWaitForVBlank();
 						}
 
@@ -2122,9 +2248,16 @@ int main(int argc, char **argv) {
 						snprintf (text, sizeof(text), "Start failed. Error %i", err);
 						clearText();
 						ClearBrightness();
-						printSmall(false, 4, 80, text);
-						if (err == 1) {
-							printSmall(false, 4, 88, "nds-bootstrap not found.");
+						if (darkTheme == 0) {
+							printSmall(false, 4, 80, text);
+							if (err == 1) {
+								printSmall(false, 4, 88, "nds-bootstrap not found.");
+							}
+						} else {
+							printLarge(false, 4, 80, text);
+							if (err == 1) {
+								printLarge(false, 4, 88, "nds-bootstrap not found.");
+							}
 						}
 						stop();
 					} else {
@@ -2158,7 +2291,12 @@ int main(int argc, char **argv) {
 					snprintf (text, sizeof(text), "Start failed. Error %i", err);
 					clearText();
 					ClearBrightness();
-					printSmall(false, 4, 4, text);
+					if (darkTheme == 0) {
+						printSmall(false, 4, 4, text);
+					} else {
+						printLarge(false, 4, 4, text);
+					}
+					
 					stop();
 				}
 			} else if ((strcasecmp (filename.c_str() + filename.size() - 3, ".gb") == 0)
@@ -2187,7 +2325,11 @@ int main(int argc, char **argv) {
 				snprintf (text, sizeof(text), "Start failed. Error %i", err);
 				clearText();
 				ClearBrightness();
-				printSmall(false, 4, 4, text);
+				if (darkTheme == 0) {
+					printSmall(false, 4, 4, text);
+				} else {
+					printLarge(false, 4, 4, text);
+				}
 				stop();
 			} else if ((strcasecmp (filename.c_str() + filename.size() - 4, ".nes") == 0)
 					|| (strcasecmp (filename.c_str() + filename.size() - 4, ".NDS") == 0)
@@ -2213,7 +2355,12 @@ int main(int argc, char **argv) {
 				snprintf (text, sizeof(text), "Start failed. Error %i", err);
 				clearText();
 				ClearBrightness();
-				printSmall(false, 4, 4, text);
+				if (darkTheme == 0) {
+					printSmall(false, 4, 4, text);
+				} else {
+					printLarge(false, 4, 4, text);
+				}
+				
 				stop();
 			}
 
